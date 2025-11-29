@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="id" class="">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Weather Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+
+    <style>
+      .fade-in {
+        animation: fadeIn 0.35s ease both;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .spinner {
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      :root {
+        --glass-light: rgba(255, 255, 255, 0.7);
+        --glass-dark: rgba(11, 13, 17, 0.45);
+        --accent: #06b6d4; /* sky-400 */
+      }
+
+      .glass-card {
+        background: var(--glass-light);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 8px 30px rgba(2, 6, 23, 0.08);
+      }
+      .dark .glass-card {
+        background: var(--glass-dark);
+        box-shadow: 0 10px 30px rgba(2, 6, 23, 0.45);
+      }
+
+      .toggle-unit {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        width: 48px;
+        height: 26px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.9),
+          rgba(255, 255, 255, 0.75)
+        );
+        border-radius: 999px;
+        position: relative;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        transition: background 0.2s;
+        outline: none;
+      }
+      .toggle-unit::after {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 2px 8px rgba(16, 24, 40, 0.12);
+        transition: transform 0.2s ease;
+      }
+      .toggle-unit:checked {
+        background: linear-gradient(90deg, #ade7f5, #7dd3fc);
+      }
+      .toggle-unit:checked::after {
+        transform: translateX(22px);
+      }
+
+      .search-wrap {
+        position: relative;
+      }
+      .search-wrap svg {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #94a3b8;
+      }
+      #search-input {
+        padding-left: 40px;
+      }
+
+      #suggestions {
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(2, 6, 23, 0.08);
+      }
+      #suggestions li {
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+      #suggestions li:hover {
+        background: rgba(15, 23, 42, 0.04);
+      }
+
+      .forecast-card {
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.65),
+          rgba(255, 255, 255, 0.6)
+        );
+        border: 1px solid rgba(2, 6, 23, 0.03);
+      }
+      .dark .forecast-card {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: rgba(255, 255, 255, 0.04);
+      }
+
+      #favorites {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .favorite-badge {
+        padding: 0.55rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.04);
+        cursor: pointer;
+        transition: transform 0.12s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .favorite-badge:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
+      }
+      .favorite-badge img {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+      }
+
+      #theme-toggle {
+        padding: 0.45rem;
+        border-radius: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      aside {
+        border-right: 1px solid rgba(255, 255, 255, 0.15);
+      }
+
+      .forecast-card {
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(6px);
+        border-radius: 1rem;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .dark .forecast-card {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .forecast-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .favorite-badge {
+        padding: 0.45rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(100, 116, 139, 0.15);
+        transition: 0.15s;
+      }
+      .favorite-badge:hover {
+        background: rgba(100, 116, 139, 0.25);
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors"
+  >
+    <div class="flex min-h-screen">
+      <aside
+        class="w-72 bg-white/60 dark:bg-slate-800/40 backdrop-blur-md shadow-xl p-5 flex flex-col gap-6 border-r border-white/20"
+      >
+        <h1 class="text-xl font-semibold mb-2">Weather Dashboard</h1>
+
+        <div class="relative">
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Cari kota..."
+            class="w-full px-3 py-2 rounded-lg border focus:ring-2 focus:ring-sky-400 dark:bg-slate-700"
+          />
+          <ul
+            id="suggestions"
+            class="absolute z-10 left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-md shadow hidden"
+          ></ul>
+        </div>
+
+        <button
+          id="refresh-btn"
+          class="w-full px-4 py-2 rounded-lg border hover:bg-sky-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2"
+        >
+          Refresh
+        </button>
+
+        <div class="flex items-center justify-between p-2 rounded-lg border">
+          <span>°C</span>
+          <input id="unit-toggle" type="checkbox" class="toggle-unit" />
+          <span>°F</span>
+        </div>
+
+        <button
+          id="theme-toggle"
+          class="px-3 py-2 rounded-lg border flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700"
+        >
+          🌗 Theme
+        </button>
+
+        <div>
+          <h2 class="font-medium mb-2">Favorit</h2>
+          <div id="favorites" class="flex flex-wrap gap-2"></div>
+        </div>
+      </aside>
+
+      <main class="flex-1 p-6">
+        <section
+          id="current-card"
+          class="glass-card rounded-2xl p-6 shadow-md fade-in mb-6"
+        >
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 id="location-name" class="text-2xl font-semibold">-</h3>
+              <p
+                id="weather-desc"
+                class="text-sm text-slate-500 dark:text-slate-300"
+              >
+                -
+              </p>
+              <p id="timestamp" class="text-xs text-slate-400 mt-1">-</p>
+            </div>
+            <div class="flex items-center gap-4">
+              <div id="temp" class="text-5xl font-bold tracking-tight">--°</div>
+              <img
+                id="weather-icon"
+                class="w-20 h-20 rounded-full bg-white/60 p-1"
+              />
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <p class="text-xs text-slate-500">Humidity</p>
+              <p id="humidity" class="font-medium">-- %</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500">Wind</p>
+              <p id="wind" class="font-medium">-- m/s</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500">Pressure</p>
+              <p id="pressure" class="font-medium">-- hPa</p>
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-center gap-3">
+            <button
+              id="save-fav"
+              class="px-4 py-2 bg-emerald-500 text-white rounded-lg"
+            >
+              Tambah Favorit
+            </button>
+            <button
+              id="remove-fav"
+              class="px-4 py-2 bg-red-500 text-white rounded-lg hidden"
+            >
+              Hapus Favorit
+            </button>
+
+            <div
+              id="loading"
+              class="ml-2 hidden items-center gap-2 text-sm text-slate-500"
+            >
+              <div class="w-4 h-4 border-2 rounded-full spinner"></div>
+              <span>Loading...</span>
+            </div>
+          </div>
+
+          <p id="error-msg" class="mt-3 text-red-500 hidden"></p>
+        </section>
+
+        <section>
+          <h4 class="font-medium mb-3">5-Day Forecast</h4>
+          <div
+            id="forecast"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          ></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js" type="module"></script>
+  </body>
+</html>
